@@ -1,4 +1,7 @@
-import { spawn } from 'child_process';
+import { spawn } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { writeFile } from 'node:fs/promises';
 
 import Chatsounds from '.';
 import {
@@ -111,7 +114,9 @@ export default class Context {
       soundCount++;
     }
 
-    const filteredPaths = paths.filter((x): x is string => x !== undefined);
+    const filteredPaths = paths.filter(
+      (x: string | undefined) => x !== undefined
+    );
 
     const filterComplexArgument = [
       delayFilters.join(';'),
@@ -122,16 +127,28 @@ export default class Context {
     if (filterComplex.length !== 0)
       filterComplexArgument.unshift(filterComplex.join(';'));
 
+    const now = Date.now();
+    //const filenameInputs = join(tmpdir(), `sh-inputs-${now}`);
+    const filenameFilter = join(tmpdir(), `sh-filter-${now}`);
+    // TODO: figure out how to make ffmpeg take in a list of inputs that can be mapped as separate inputs to filter_complex
+    /*await writeFile(
+      filenameInputs,
+      filteredPaths
+        .map(p => resolve('./' + p))
+        .map(p => `file '${p}'`)
+        .join('\n')
+    );*/
+    await writeFile(filenameFilter, filterComplexArgument.join(';'));
+
     let args = [
-      ...filteredPaths.map(path => ['-i', path]).flat(),
-      '-filter_complex',
-      filterComplexArgument.join(';'),
+      ...filteredPaths.map((path: any) => ['-i', path]).flat(),
+      '-/filter_complex',
+      filenameFilter,
       '-map',
       '[outa]',
     ];
 
-    if (settings.codec)
-      args.push('-c:a', settings.codec);
+    if (settings.codec) args.push('-c:a', settings.codec);
 
     args = args.concat(
       '-f',
@@ -160,13 +177,9 @@ export default class Context {
     return await new Promise<Buffer>(res => {
       let buffer = Buffer.alloc(0);
 
-      stream.on('data', data =>
-          (buffer = Buffer.concat([buffer, data]))
-      );
+      stream.on('data', data => (buffer = Buffer.concat([buffer, data])));
 
-      stream.on('end', () =>
-        res(buffer)
-      );
-    })
+      stream.on('end', () => res(buffer));
+    });
   }
 }
