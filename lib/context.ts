@@ -110,7 +110,9 @@ export default class Context {
       }
 
       const delayedOutput = output + '-d';
-      delayFilters.push(`[${output}]adelay=${time}|${time}[${delayedOutput}]`);
+      delayFilters.push(
+        `[${output}]aresample=${settings.sampleRate},adelay=${time}|${time}[${delayedOutput}]`
+      );
       named[i] = delayedOutput;
 
       time += duration;
