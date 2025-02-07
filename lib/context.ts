@@ -131,20 +131,20 @@ export default class Context {
       filterComplexArgument.unshift(filterComplex.join(';'));
 
     const now = Date.now();
-    const filenameInputs = join(tmpdir(), `sh-inputs-${now}`);
+    //const filenameInputs = join(tmpdir(), `sh-inputs-${now}`);
     const filenameFilter = join(tmpdir(), `sh-filter-${now}`);
-    await writeFile(
+    // TODO: fix this at some point
+    /*await writeFile(
       filenameInputs,
       soundPathIndicies
         .map(p => resolve('./' + p))
         .map(p => `file '${p}'`)
         .join('\n')
-    );
+    );*/
     await writeFile(filenameFilter, filterComplexArgument.join(';'));
 
     let args = [
-      ...['-f', 'concat', '-safe', '0', '-i', filenameInputs],
-      //...filteredPaths.map((path: any) => ['-i', path]).flat(),
+      ...soundPathIndicies.map((path: any) => ['-i', path]).flat(),
       '-/filter_complex',
       filenameFilter,
       '-map',
