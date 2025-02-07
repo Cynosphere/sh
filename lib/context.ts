@@ -63,7 +63,7 @@ export default class Context {
     const filterComplex: string[] = [];
     const delayFilters = [];
     let time = 0;
-    let soundCount = 0;
+    const soundPathIndicies: string[] = [];
     for (let i = 0; i < this.flattened.length; i++) {
       const path = paths[i];
       if (!path) continue;
@@ -72,7 +72,10 @@ export default class Context {
         (a, b) => (b.modifier?.priority || 0) - (a.modifier?.priority || 0)
       );
 
-      let output = (named[i] = soundCount + ':a');
+      const index = soundPathIndicies.includes(path)
+        ? soundPathIndicies.indexOf(path)
+        : soundPathIndicies.length;
+      let output = (named[i] = `${index}:a`);
       let duration = (await this.chatsounds.cache.getDuration(path)) * 1000;
       const stack: Record<string, number> = {};
       const locals = new Map<string, any>();
@@ -111,7 +114,7 @@ export default class Context {
       named[i] = delayedOutput;
 
       time += duration;
-      soundCount++;
+      if (!soundPathIndicies.includes(path)) soundPathIndicies.push(path);
     }
 
     const filteredPaths = paths.filter(
@@ -128,20 +131,20 @@ export default class Context {
       filterComplexArgument.unshift(filterComplex.join(';'));
 
     const now = Date.now();
-    //const filenameInputs = join(tmpdir(), `sh-inputs-${now}`);
+    const filenameInputs = join(tmpdir(), `sh-inputs-${now}`);
     const filenameFilter = join(tmpdir(), `sh-filter-${now}`);
-    // TODO: figure out how to make ffmpeg take in a list of inputs that can be mapped as separate inputs to filter_complex
-    /*await writeFile(
+    await writeFile(
       filenameInputs,
-      filteredPaths
+      soundPathIndicies
         .map(p => resolve('./' + p))
         .map(p => `file '${p}'`)
         .join('\n')
-    );*/
+    );
     await writeFile(filenameFilter, filterComplexArgument.join(';'));
 
     let args = [
-      ...filteredPaths.map((path: any) => ['-i', path]).flat(),
+      ...['-f', 'concat', '-safe', '0', '-i', filenameInputs],
+      //...filteredPaths.map((path: any) => ['-i', path]).flat(),
       '-/filter_complex',
       filenameFilter,
       '-map',
