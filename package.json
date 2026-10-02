@@ -2,7 +2,7 @@
   "name": "sh",
   "version": "1.0.0",
   "description": "JavaScript soundboard library.",
-  "main": "./dist/index.js",
+  "main": "./lib/index.ts",
   "types": "./dist/index.d.ts",
   "type": "module",
   "exports": {
